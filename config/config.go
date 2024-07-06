@@ -1,32 +1,33 @@
 package config
 
 import (
+	"fmt"
+	"github.com/caarlos0/env/v9"
 	"github.com/joho/godotenv"
 	"log"
-	"os"
 	"time"
 )
 
 type (
 	Config struct {
-		Env string
+		Env string `env:"ENV,required"`
 		HttpService
 		PG
 	}
 
 	HttpService struct {
-		Address     string
-		Timeout     time.Duration
-		IdleTimeout time.Duration
+		Address     string        `env:"HTTP_ADDRESS,required"`
+		Timeout     time.Duration `env:"HTTP_TIMEOUT,required"`
+		IdleTimeout time.Duration `env:"HTTP_IDLE_TIMEOUT,required"`
 	}
 
 	PG struct {
-		Host     string
-		Port     string
-		Username string
-		Password string
-		Database string
-		SSLMode  string
+		Host     string `env:"PG_HOST,required"`
+		Port     string `env:"PG_PORT,required"`
+		Username string `env:"PG_USERNAME,required"`
+		Password string `env:"PG_PASSWORD,required"`
+		Database string `env:"PG_DATABASE,required"`
+		SSLMode  string `env:"PG_SSLMODE,required"`
 	}
 )
 
@@ -38,24 +39,11 @@ func LoadConfig() (*Config, error) {
 
 	config := &Config{}
 
-	config.Env = os.Getenv("ENV")
-
-	config.HttpService.Address = os.Getenv("HTTP_ADDRESS")
-	config.HttpService.Timeout, err = time.ParseDuration(os.Getenv("HTTP_TIMEOUT"))
+	err = env.Parse(config)
 	if err != nil {
-		log.Fatalf("error loading .env timeout param: %v", err)
-	}
-	config.HttpService.IdleTimeout, err = time.ParseDuration(os.Getenv("HTTP_IDLE_TIMEOUT"))
-	if err != nil {
-		log.Fatalf("error loading .env timeout param: %v", err)
+		log.Fatalf("error to parse .env variables: %v", err)
 	}
 
-	config.PG.Host = os.Getenv("PG_HOST")
-	config.PG.Port = os.Getenv("PG_PORT")
-	config.PG.Username = os.Getenv("PG_USERNAME")
-	config.PG.Password = os.Getenv("PG_PASSWORD")
-	config.PG.Database = os.Getenv("PG_DATABASE")
-	config.PG.SSLMode = os.Getenv("PG_SSLMODE")
-
+	fmt.Println(config)
 	return config, nil
 }

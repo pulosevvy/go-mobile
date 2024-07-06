@@ -2,7 +2,9 @@ package user
 
 import (
 	"github.com/gin-gonic/gin"
+	"go-mobile/internal/handler/http/user/dto"
 	"go-mobile/internal/service"
+	"go-mobile/middleware"
 	"log/slog"
 	"net/http"
 )
@@ -17,18 +19,21 @@ func NewUserController(route *gin.RouterGroup, l *slog.Logger, us service.UserSe
 	r := route.Group("/users")
 	{
 		r.GET("", c.GetAll)
-		r.POST("", c.Create)
+		r.POST("", middleware.BodyValidate[dto.CreateUserDto](), c.Create)
 	}
+}
+
+func (uc *userController) Create(c *gin.Context) {
+	input := c.MustGet("body").(dto.CreateUserDto)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "OK CREATED",
+		"data":    input.PassportNumber,
+	})
 }
 
 func (uc *userController) GetAll(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "hello",
-	})
-}
-
-func (uc *userController) Create(c *gin.Context) {
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "OK CREATED",
 	})
 }
