@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-mobile/config"
 	"go-mobile/internal/handler/http"
+	api "go-mobile/internal/repository/api/user"
 	taskRepository "go-mobile/internal/repository/postgres/task"
 	userRepository "go-mobile/internal/repository/postgres/user"
 	"go-mobile/internal/service/task"
@@ -40,7 +41,7 @@ func Run(cfg *config.Config) {
 	}(pg, context.Background())
 
 	//Services init
-	userService := service.NewUserService(userRepository.NewUserRepository(pg), "")
+	userService := service.NewUserService(userRepository.NewUserRepository(pg, log), api.NewUserApi(cfg.ExternalApi.PeopleApi, log), log)
 	taskService := task.NewTaskService(taskRepository.NewTaskRepository(pg))
 
 	//Routes init

@@ -12,10 +12,10 @@ func Passport(field validator.FieldLevel) bool {
 		return false
 	}
 
-	number := passport[0]
-	serial := passport[1]
+	series := passport[0]
+	number := passport[1]
 
-	if len(number) != 4 || len(serial) != 6 {
+	if len(series) != 4 || len(number) != 6 {
 		return false
 	}
 

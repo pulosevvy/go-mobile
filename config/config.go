@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"github.com/caarlos0/env/v9"
 	"github.com/joho/godotenv"
 	"log"
@@ -13,6 +12,7 @@ type (
 		Env string `env:"ENV,required"`
 		HttpService
 		PG
+		ExternalApi
 	}
 
 	HttpService struct {
@@ -29,6 +29,10 @@ type (
 		Database string `env:"PG_DATABASE,required"`
 		SSLMode  string `env:"PG_SSLMODE,required"`
 	}
+
+	ExternalApi struct {
+		PeopleApi string `env:"PEOPLES_API"`
+	}
 )
 
 func LoadConfig() (*Config, error) {
@@ -44,6 +48,5 @@ func LoadConfig() (*Config, error) {
 		log.Fatalf("error to parse .env variables: %v", err)
 	}
 
-	fmt.Println(config)
 	return config, nil
 }

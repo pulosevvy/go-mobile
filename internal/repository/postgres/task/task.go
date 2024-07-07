@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"go-mobile/package/database/postgres"
 )
 
@@ -12,17 +13,17 @@ func NewTaskRepository(db *postgres.Postgres) *taskRepository {
 	return &taskRepository{db}
 }
 
-func (t taskRepository) GetByUserId(userId string) {
+func (t taskRepository) GetByUserId(ctx context.Context, userId string) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (t taskRepository) StartTime() {
+func (t taskRepository) StartTime(ctx context.Context) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (t taskRepository) EndTime() {
+func (t taskRepository) EndTime(ctx context.Context) {
 	//TODO implement me
 	panic("implement me")
 }
