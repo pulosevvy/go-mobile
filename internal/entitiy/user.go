@@ -20,6 +20,14 @@ type UserToResponse struct {
 	Passport   *string `json:"passport"`
 }
 
+type UserListResponse struct {
+	Page       *int              `json:"page"`
+	Limit      *int              `json:"limit"`
+	TotalCount *int              `json:"totalCount"`
+	TotalPage  int               `json:"totalPage"`
+	Users      []*UserToResponse `json:"users"`
+}
+
 type PeopleApiResponse struct {
 	Surname    string `json:"surname"`
 	Name       string `json:"name"`

@@ -42,7 +42,7 @@ func Run(cfg *config.Config) {
 
 	//Services init
 	userService := service.NewUserService(userRepository.NewUserRepository(pg, log), api.NewUserApi(cfg.ExternalApi.PeopleApi, log), log)
-	taskService := task.NewTaskService(taskRepository.NewTaskRepository(pg))
+	taskService := task.NewTaskService(taskRepository.NewTaskRepository(pg, log), log)
 
 	//Routes init
 	app := gin.New()

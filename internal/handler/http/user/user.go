@@ -20,9 +20,23 @@ func NewUserController(route *gin.RouterGroup, l *slog.Logger, us service.UserSe
 	c := &userController{us, l}
 	r := route.Group("/users")
 	{
-		r.GET("", c.GetAll)
+		r.GET("", middleware.QueryValidate[dto.GetAllParams](), c.GetAll)
 		r.POST("", middleware.BodyValidate[dto.CreateUserDto](), c.Create)
+		r.PATCH("/:id", middleware.UuidValidate(), middleware.BodyValidate[dto.UpdateUserDto](), c.Update)
+		r.DELETE("/:id", middleware.UuidValidate(), c.Delete)
 	}
+}
+
+func (uc *userController) GetAll(c *gin.Context) {
+	input := c.MustGet("query").(dto.GetAllParams)
+
+	users, err := uc.us.GetAll(c, &input)
+	if err != nil {
+		uc.l.Error("UserController - GetAll", sl.Err(err))
+		error.InternalServerErrorResponse(c)
+		return
+	}
+	c.JSON(http.StatusOK, users)
 }
 
 func (uc *userController) Create(c *gin.Context) {
@@ -49,8 +63,47 @@ func (uc *userController) Create(c *gin.Context) {
 	})
 }
 
-func (uc *userController) GetAll(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "hello",
+func (uc *userController) Update(c *gin.Context) {
+	userId := c.MustGet("id").(string)
+	input := c.MustGet("body").(dto.UpdateUserDto)
+
+	exists, err := uc.us.GetUserById(c, userId)
+	if exists == nil {
+		error.NewErrorResponse(c, http.StatusNotFound, "user not found")
+		return
+	}
+	if err != nil {
+		error.InternalServerErrorResponse(c)
+		return
+	}
+	err = uc.us.Update(c, &input, userId)
+	if err != nil {
+		uc.l.Error("UserController - Update", sl.Err(err))
+		error.InternalServerErrorResponse(c)
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "user updated",
 	})
+}
+
+func (uc *userController) Delete(c *gin.Context) {
+	userId := c.MustGet("id").(string)
+
+	exists, err := uc.us.GetUserById(c, userId)
+	if exists == nil {
+		error.NewErrorResponse(c, http.StatusNotFound, "user not found")
+		return
+	}
+	if err != nil {
+		error.InternalServerErrorResponse(c)
+		return
+	}
+	err = uc.us.Delete(c, userId)
+	if err != nil {
+		uc.l.Error("UserController - Delete", sl.Err(err))
+		error.InternalServerErrorResponse(c)
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{})
 }

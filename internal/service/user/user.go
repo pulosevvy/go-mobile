@@ -40,28 +40,47 @@ func (us *userService) Create(c context.Context, dto *dto.CreateUserDto) error {
 	return nil
 }
 
-func (us *userService) GetAll(ctx context.Context) {
-	//TODO implement me
-	panic("implement me")
+func (us *userService) GetAll(ctx context.Context, params *dto.GetAllParams) (*entity.UserListResponse, error) {
+	users, err := us.repo.GetAll(ctx, params)
+	if err != nil {
+		us.log.Error("UserService - GetAll", sl.Err(err))
+		return nil, err
+	}
+
+	return users, nil
 }
 
-func (us *userService) GetById(ctx context.Context) {
-	//TODO implement me
-	panic("implement me")
+func (us *userService) GetUserById(ctx context.Context, id string) (*entity.UserToResponse, error) {
+	user, err := us.repo.FindUserByCustomField(ctx, "id", id)
+	if err != nil {
+		us.log.Error("UserService - GetUserById", sl.Err(err))
+		return nil, err
+	}
+
+	return user, nil
 }
 
-func (us *userService) Delete(ctx context.Context) {
-	//TODO implement me
-	panic("implement me")
+func (us *userService) Delete(c context.Context, userId string) error {
+	err := us.repo.Delete(c, userId)
+	if err != nil {
+		us.log.Error("UserService - Delete", sl.Err(err))
+		return err
+	}
+	return nil
 }
 
-func (us *userService) Update(ctx context.Context) {
-	//TODO implement me
-	panic("implement me")
+func (us *userService) Update(c context.Context, dto *dto.UpdateUserDto, userId string) error {
+	series, number := decomposePassport(dto.Passport)
+	err := us.repo.Update(c, dto, userId, series, number)
+	if err != nil {
+		us.log.Error("UserService - Update", sl.Err(err))
+		return err
+	}
+	return nil
 }
 
 func (us *userService) GetUserByPassport(ctx context.Context, passport string) (*entity.UserToResponse, error) {
-	user, err := us.repo.GetUserByPassport(ctx, passport)
+	user, err := us.repo.FindUserByCustomField(ctx, "passport", passport)
 	if err != nil {
 		us.log.Error("UserService - GetUserByPassport", sl.Err(err))
 		return nil, err
