@@ -6,6 +6,7 @@ import (
 	taskDto "go-mobile/internal/handler/http/task/dto"
 	repository "go-mobile/internal/repository/postgres"
 	sl "go-mobile/package/logger/slog"
+	"go-mobile/package/methods"
 	"log/slog"
 	"time"
 )
@@ -19,11 +20,34 @@ func NewTaskService(repo repository.TaskRepository, log *slog.Logger) *taskServi
 	return &taskService{repo, log}
 }
 
-func (t *taskService) GetByUserId(ctx context.Context, userId string) ([]entity.TaskToResponse, error) {
-	tasks, err := t.repo.GetByUserId(ctx, userId)
+func (t *taskService) GetByUserId(ctx context.Context, userId string, dto *taskDto.GetByUser) ([]entity.TaskToResponse, error) {
+	layout := "2006-01-02"
+	if dto.StartDate != "" {
+		startDate, err := time.Parse(layout, dto.StartDate)
+		if err != nil {
+			t.log.Error("TaskService - GetByUserId", sl.Err(err))
+		}
+		dto.StartDateUnix = startDate.Unix()
+	}
+	if dto.EndDate != "" {
+		endDate, err := time.Parse(layout, dto.EndDate)
+		if err != nil {
+			t.log.Error("TaskService - GetByUserId", sl.Err(err))
+		}
+		dto.EndDateUnix = endDate.Unix()
+	}
+
+	tasks, err := t.repo.GetByUserId(ctx, userId, dto)
+
 	if err != nil {
-		t.log.Error("TaskService - CreateTask", sl.Err(err))
+		t.log.Error("TaskService - GetByUserId", sl.Err(err))
 		return nil, err
+	}
+
+	for i := range tasks {
+		if tasks[i].Hours != nil {
+			tasks[i].FormattedHours = methods.FloatToHours(*tasks[i].Hours)
+		}
 	}
 
 	return tasks, nil
@@ -39,17 +63,21 @@ func (t *taskService) GetTaskById(ctx context.Context, taskId string) (*entity.T
 	return task, nil
 }
 
-func (t *taskService) CreateTask(ctx context.Context, dto *taskDto.CreateTaskDto) error {
-	err := t.repo.CreateTask(ctx, dto)
+func (t *taskService) CreateTask(ctx context.Context, dto *taskDto.CreateTaskDto) (*string, error) {
+	id, err := t.repo.CreateTask(ctx, dto)
 	if err != nil {
 		t.log.Error("TaskService - CreateTask", sl.Err(err))
-		return err
+		return nil, err
 	}
 
-	return nil
+	return id, nil
 }
 
 func (t *taskService) StartTime(ctx context.Context, taskId string, dto *taskDto.StartTaskDto) error {
+	if dto.StartTime <= 0 {
+		dto.StartTime = time.Now().Unix()
+	}
+
 	err := t.repo.StartTime(ctx, taskId, dto)
 	if err != nil {
 		t.log.Error("TaskService - StartTime", sl.Err(err))
@@ -64,10 +92,10 @@ func (t *taskService) EndTime(ctx context.Context, task *entity.TaskToResponse, 
 		dto.EndTime = time.Now().Unix()
 	}
 
-	//duration := time.Unix(dto.EndTime, 0).Sub(task.StartTask)
-	//hours := duration.Hours()
+	duration := time.Unix(dto.EndTime, 0).Sub(time.Unix(*task.StartTask, 0))
+	hours := duration.Hours()
 
-	err := t.repo.EndTime(ctx, task.Id, dto)
+	err := t.repo.EndTime(ctx, task.Id, hours, dto)
 	if err != nil {
 		t.log.Error("TaskService - EndTime", sl.Err(err))
 		return err

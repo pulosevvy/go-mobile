@@ -52,14 +52,15 @@ func (uc *userController) Create(c *gin.Context) {
 		return
 	}
 
-	err = uc.us.Create(c, &input)
+	id, err := uc.us.Create(c, &input)
 	if err != nil {
 		uc.l.Error("UserController - create", sl.Err(err))
 		error.InternalServerErrorResponse(c)
 		return
 	}
+
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "user created",
+		"id": id,
 	})
 }
 

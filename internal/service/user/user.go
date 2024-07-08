@@ -21,23 +21,21 @@ func NewUserService(repo repository.UserRepository, userApi apiRepository.UserAp
 	return &userService{repo, userApi, log}
 }
 
-func (us *userService) Create(c context.Context, dto *dto.CreateUserDto) error {
+func (us *userService) Create(c context.Context, dto *dto.CreateUserDto) (*string, error) {
 	series, number := decomposePassport(dto.PassportNumber)
 
-	err := us.repo.Create(c, dto.PassportNumber, series, number)
+	id, err := us.repo.Create(c, dto.PassportNumber, series, number)
 	if err != nil {
 		us.log.Error("UserService - Create", sl.Err(err))
-		return err
+		return nil, err
 	}
 
 	//The terms of reference to do not specify the logic after returning from an external API, so only logging
 	_, err = us.GetPeopleInfo(series, number)
 	if err != nil {
 		us.log.Error("UserService - Create - GetPeopleInfo", sl.Err(err))
-		return nil
 	}
-
-	return nil
+	return id, nil
 }
 
 func (us *userService) GetAll(ctx context.Context, params *dto.GetAllParams) (*entity.UserListResponse, error) {

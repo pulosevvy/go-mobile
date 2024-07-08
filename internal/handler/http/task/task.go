@@ -4,12 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-mobile/internal/handler/http/error"
 	"go-mobile/internal/handler/http/task/dto"
-	sl "go-mobile/package/logger/slog"
-	"net/http"
-
 	"go-mobile/internal/service"
 	"go-mobile/middleware"
+	sl "go-mobile/package/logger/slog"
 	"log/slog"
+	"net/http"
 )
 
 type taskController struct {
@@ -21,7 +20,7 @@ func NewTaskController(route *gin.RouterGroup, l *slog.Logger, ts service.TaskSe
 	c := &taskController{ts, l}
 	r := route.Group("/tasks")
 	{
-		r.GET("/info/:id", middleware.UuidValidate(), c.GetByUser)
+		r.GET("/info/:id", middleware.UuidValidate(), middleware.QueryValidate[dto.GetByUser](), c.GetByUser)
 		r.POST("", middleware.BodyValidate[dto.CreateTaskDto](), c.Create)
 		r.POST("/start-time/:id", middleware.UuidValidate(), middleware.BodyValidate[dto.StartTaskDto](), c.StartTime)
 		r.POST("/end-time/:id", middleware.UuidValidate(), middleware.BodyValidate[dto.EndTaskDto](), c.EndTime)
@@ -30,8 +29,9 @@ func NewTaskController(route *gin.RouterGroup, l *slog.Logger, ts service.TaskSe
 
 func (tc *taskController) GetByUser(c *gin.Context) {
 	userId := c.MustGet("id").(string)
+	input := c.MustGet("query").(dto.GetByUser)
 
-	tasks, err := tc.ts.GetByUserId(c, userId)
+	tasks, err := tc.ts.GetByUserId(c, userId, &input)
 	if err != nil {
 		tc.l.Error("TaskController - GetByUser", sl.Err(err))
 		error.InternalServerErrorResponse(c)
@@ -45,14 +45,14 @@ func (tc *taskController) GetByUser(c *gin.Context) {
 func (tc *taskController) Create(c *gin.Context) {
 	input := c.MustGet("body").(dto.CreateTaskDto)
 
-	err := tc.ts.CreateTask(c, &input)
+	id, err := tc.ts.CreateTask(c, &input)
 	if err != nil {
 		tc.l.Error("UserController - create", sl.Err(err))
 		error.InternalServerErrorResponse(c)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "task created",
+		"id": *id,
 	})
 }
 
@@ -95,7 +95,7 @@ func (tc *taskController) EndTime(c *gin.Context) {
 		error.InternalServerErrorResponse(c)
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"message": "update end time",
 	})
 }

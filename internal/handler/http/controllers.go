@@ -32,5 +32,9 @@ func NewControllers(h *gin.Engine, log *slog.Logger, userService service.UserSer
 		if err != nil {
 			log.Error("register validator validation error", err)
 		}
+		err = v.RegisterValidation("dateformat", validation.ValidateDateFormat)
+		if err != nil {
+			log.Error("register validator validation error", err)
+		}
 	}
 }

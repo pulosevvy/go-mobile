@@ -9,7 +9,7 @@ import (
 
 type UserService interface {
 	GetAll(ctx context.Context, params *userDto.GetAllParams) (*entity.UserListResponse, error)
-	Create(ctx context.Context, dto *userDto.CreateUserDto) error
+	Create(ctx context.Context, dto *userDto.CreateUserDto) (*string, error)
 	Delete(ctx context.Context, userId string) error
 	Update(c context.Context, dto *userDto.UpdateUserDto, userId string) error
 	GetUserByPassport(ctx context.Context, passport string) (*entity.UserToResponse, error)
@@ -18,9 +18,9 @@ type UserService interface {
 }
 
 type TaskService interface {
-	GetByUserId(ctx context.Context, userId string) ([]entity.TaskToResponse, error)
+	GetByUserId(ctx context.Context, userId string, dto *taskDto.GetByUser) ([]entity.TaskToResponse, error)
 	GetTaskById(ctx context.Context, taskId string) (*entity.TaskToResponse, error)
-	CreateTask(ctx context.Context, dto *taskDto.CreateTaskDto) error
+	CreateTask(ctx context.Context, dto *taskDto.CreateTaskDto) (*string, error)
 	StartTime(ctx context.Context, taskId string, dto *taskDto.StartTaskDto) error
 	EndTime(ctx context.Context, task *entity.TaskToResponse, dto *taskDto.EndTaskDto) error
 }

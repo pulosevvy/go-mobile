@@ -22,28 +22,29 @@ func NewUserRepository(db *postgres.Postgres, log *slog.Logger) *userRepository 
 	return &userRepository{db, log}
 }
 
-func (u userRepository) Create(ctx context.Context, passport, passportSeries, passportNumber string) error {
+func (u userRepository) Create(ctx context.Context, passport, passportSeries, passportNumber string) (*string, error) {
 	const fn = "UserRepository.Create"
 
 	sql, args, err := u.db.Builder.Insert("users").
 		Columns("passport, passport_series, passport_number").
 		Values(passport, passportSeries, passportNumber).
+		Suffix("RETURNING id").
 		ToSql()
 
 	if err != nil {
 		u.log.Error("UserRepository - Create - BUILD SQL", sl.Err(err))
-		return fmt.Errorf("%s: %w", fn, err)
+		return nil, fmt.Errorf("%s: %w", fn, err)
 	}
 	u.log.Info("SQL", "query", sql)
 
-	_, err = u.db.Conn.Exec(ctx, sql, args...)
-
+	var id string
+	err = u.db.Conn.QueryRow(ctx, sql, args...).Scan(&id)
 	if err != nil {
 		u.log.Error("UserRepository - Create - EXEC SQL", sl.Err(err))
-		return fmt.Errorf("%s: %w", fn, err)
+		return nil, fmt.Errorf("%s: %w", fn, err)
 	}
 
-	return nil
+	return &id, nil
 }
 
 func (u userRepository) FindUserByCustomField(ctx context.Context, field, value string) (*entity.UserToResponse, error) {
